@@ -100,10 +100,21 @@ class NFLGameStats:
             print(f"Statistics not available for {game_url}: {e}")
             return None, None, {}
 
-        team1_stats = self.extract_team_stats(gamelog_statistics.iloc[0], team1_name)
-        print(team1_stats)
-        team2_stats = self.extract_team_stats(gamelog_statistics.iloc[1], team2_name)
-        print(team2_stats)
+
+        # Ensure that team1_stats corresponds to team1_name (Eagles) and team2_stats to team2_name (Packers)
+        if 'market' in gamelog_statistics.columns:
+            # Use 'market' as the column for identifying teams
+            if gamelog_statistics.iloc[0]['market'] == team1_name:
+                team1_stats = self.extract_team_stats(gamelog_statistics.iloc[0], team1_name)
+                team2_stats = self.extract_team_stats(gamelog_statistics.iloc[1], team2_name)
+            else:
+                team1_stats = self.extract_team_stats(gamelog_statistics.iloc[1], team1_name)
+                team2_stats = self.extract_team_stats(gamelog_statistics.iloc[0], team2_name)
+        else:
+            # Handle the case where the expected column is missing
+            print("The 'market' column is missing. Please check the column names.")
+            return None, None, {}
+
         metadata = self.extract_game_metadata(gamelog_metadata)
         return team1_stats, team2_stats, metadata
 
@@ -166,9 +177,6 @@ class NFLGameStats:
        
         df = pd.DataFrame(self.team_stats_list)
        
-        # Display the DataFrame
-        print(df)
-       
         # Save the DataFrame to CSV
         csv_filename = f'nfl_game_stats_{self.date}.csv'
         df.to_csv(csv_filename, index=False)
@@ -181,6 +189,6 @@ class NFLGameStats:
         print(f"Data saved to {excel_filename}")
 
 # Example usage:
-input_date = "2024-09-06"
+input_date = "2024-09-08"
 nfl_stats = NFLGameStats(input_date)
 nfl_stats.fetch_games()
