@@ -53,6 +53,20 @@ class NFLGameStats:
 
         # Add metadata for team 1's perspective
         metadata_team1 = metadata.copy()  # Create a copy of the metadata for each team's entry
+        metadata_team2 = metadata.copy()
+
+        # Update spread values based on home/away
+        if tm_location == 'H':  # Tm is home
+            metadata_team1['tm_spread'] = metadata['tm_spread']  # Home team spread
+            metadata_team1['opp_spread'] = metadata['opp_spread']  # Opponent spread
+            metadata_team2['tm_spread'] = metadata['opp_spread']  # Opponent becomes home in team2's perspective
+            metadata_team2['opp_spread'] = metadata['tm_spread']  # Home becomes opponent
+        else:  # Tm is away
+            metadata_team1['tm_spread'] = metadata['opp_spread']  # Away team spread
+            metadata_team1['opp_spread'] = metadata['tm_spread']  # Home team spread
+            metadata_team2['tm_spread'] = metadata['tm_spread']  # Home stays home in team2's perspective
+            metadata_team2['opp_spread'] = metadata['opp_spread']  # Opponent stays opponent
+
         metadata_team1.update({
             'tm_location': tm_location,
             'opp_location': opp_location,
@@ -62,7 +76,6 @@ class NFLGameStats:
         })
 
         # Add metadata for team 2's perspective, where the locations are swapped
-        metadata_team2 = metadata.copy()
         metadata_team2.update({
             'tm_location': opp_location,  # Swapped with the opponent's location
             'opp_location': tm_location,  # Swapped with the team's location
@@ -85,6 +98,7 @@ class NFLGameStats:
             self.team_stats_list.append(team2_stats)
         else:
             print(f"Stats not available yet for {game_url}")
+
 
     def extract_game_statistics(self, game_url, team1_name, team2_name):
         """Extracts game statistics for both teams and metadata."""
