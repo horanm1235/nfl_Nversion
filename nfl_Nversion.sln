@@ -1,0 +1,23 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34221.43
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "nfl_Nversion", "nfl_Nversion\nfl_Nversion.pyproj", "{0A3F8583-BD7B-4084-AE35-6C83E3756068}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0A3F8583-BD7B-4084-AE35-6C83E3756068}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0A3F8583-BD7B-4084-AE35-6C83E3756068}.Release|Any CPU.ActiveCfg = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {93A432A5-E45C-4F0B-8EED-B384E84EBA1E}
+	EndGlobalSection
+EndGlobal
