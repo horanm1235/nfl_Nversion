@@ -40,8 +40,25 @@ class NFLGameStats:
         print(f"\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
         print(f"Processing game between {game['tm_name']} and {game['opp_name']} on {game['event_date']}")
         print(f"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-       
+
+        # Extract additional fields from the game DataFrame row
+        tm_location = game['tm_location']  # Tm's location (H, A, N)
+        opp_location = game['opp_location']  # Opp's location (H, A, N)
+        tm_score = game['tm_score']  # Tm's score
+        opp_score = game['opp_score']  # Opp's score
+        week = game['week']  # Week of the game
+
         team1_stats, team2_stats, metadata = self.extract_game_statistics(game_url, game['tm_name'], game['opp_name'])
+        
+        # Add the new metadata fields to the dictionary
+        metadata.update({
+            'tm_location': tm_location,
+            'opp_location': opp_location,
+            'tm_score': tm_score,
+            'opp_score': opp_score,
+            'week': week
+        })
+
         if team1_stats and team2_stats:
             team1_stats.update(metadata)
             team2_stats.update(metadata)
@@ -49,7 +66,7 @@ class NFLGameStats:
             self.team_stats_list.append(team2_stats)
         else:
             print(f"Stats not available yet for {game_url}")
-   
+
     def extract_game_statistics(self, game_url, team1_name, team2_name):
         """Extracts game statistics for both teams and metadata."""
         try:
@@ -65,10 +82,10 @@ class NFLGameStats:
             return None, None, {}
 
         team1_stats = self.extract_team_stats(gamelog_statistics.iloc[0], team1_name)
+        print(team1_stats)
         team2_stats = self.extract_team_stats(gamelog_statistics.iloc[1], team2_name)
-
+        print(team2_stats)
         metadata = self.extract_game_metadata(gamelog_metadata)
-
         return team1_stats, team2_stats, metadata
    
     def extract_team_stats(self, team_data, team_name):

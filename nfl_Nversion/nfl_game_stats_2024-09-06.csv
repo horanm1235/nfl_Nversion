@@ -1,0 +1,31 @@
+team,rush_att,rush_yds,rush_tds,pass_cmp,pass_att,pass_yds,pass_tds,pass_int,passer_rating,net_pass_yds,total_yds,times_sacked,yds_sacked_for,fumbles,fumbles_lost,turnovers,penalties,penalty_yds,first_downs,third_down_conv,third_down_att,third_down_conv_pct,fourth_down_conv,fourth_down_att,fourth_down_conv_pct,time_of_possession,tm_spread,opp_spread,total,attendance,duration,roof_type,surface_type,won_toss,won_toss_decision,won_toss_overtime,won_toss_overtime_decision,temperature,humidity_pct,wind_speed,tm_location,opp_location,tm_score,opp_score,week
+Eagles,21,163,1,17,35,260,2,1,80.655,251,414,2,9,1,0,1,10,71,19,3,11,0.273,1,1,1.0,1633,"0   -2.0
+Name: tm_spread, dtype: float64","0    2.0
+Name: opp_spread, dtype: float64","0    49.5
+Name: total, dtype: float64","0    47236
+Name: attendance, dtype: int64","0    209
+Name: duration, dtype: int64","0    None
+Name: roof_type, dtype: object","0    None
+Name: surface_type, dtype: object","0    GB
+Name: won_toss, dtype: object","0    Accepted
+Name: won_toss_decision, dtype: object","0    None
+Name: won_toss_overtime, dtype: object","0    None
+Name: won_toss_overtime_decision, dtype: object","0    None
+Name: temperature, dtype: object","0    None
+Name: humidity_pct, dtype: object","0    None
+Name: wind_speed, dtype: object",H,A,34,29,1
+Packers,38,144,2,20,34,278,2,2,80.27,266,410,2,12,2,1,3,7,57,25,4,14,0.286,1,1,1.0,1967,"0   -2.0
+Name: tm_spread, dtype: float64","0    2.0
+Name: opp_spread, dtype: float64","0    49.5
+Name: total, dtype: float64","0    47236
+Name: attendance, dtype: int64","0    209
+Name: duration, dtype: int64","0    None
+Name: roof_type, dtype: object","0    None
+Name: surface_type, dtype: object","0    GB
+Name: won_toss, dtype: object","0    Accepted
+Name: won_toss_decision, dtype: object","0    None
+Name: won_toss_overtime, dtype: object","0    None
+Name: won_toss_overtime_decision, dtype: object","0    None
+Name: temperature, dtype: object","0    None
+Name: humidity_pct, dtype: object","0    None
+Name: wind_speed, dtype: object",H,A,34,29,1
