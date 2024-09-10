@@ -48,10 +48,12 @@ class NFLGameStats:
         opp_score = game['opp_score']  # Opp's score
         week = game['week']  # Week of the game
 
+        # Fetch the statistics for both teams
         team1_stats, team2_stats, metadata = self.extract_game_statistics(game_url, game['tm_name'], game['opp_name'])
-        
-        # Add the new metadata fields to the dictionary
-        metadata.update({
+
+        # Add metadata for team 1's perspective
+        metadata_team1 = metadata.copy()  # Create a copy of the metadata for each team's entry
+        metadata_team1.update({
             'tm_location': tm_location,
             'opp_location': opp_location,
             'tm_score': tm_score,
@@ -59,10 +61,27 @@ class NFLGameStats:
             'week': week
         })
 
+        # Add metadata for team 2's perspective, where the locations are swapped
+        metadata_team2 = metadata.copy()
+        metadata_team2.update({
+            'tm_location': opp_location,  # Swapped with the opponent's location
+            'opp_location': tm_location,  # Swapped with the team's location
+            'tm_score': opp_score,        # Swap scores as well
+            'opp_score': tm_score,
+            'week': week
+        })
+
         if team1_stats and team2_stats:
-            team1_stats.update(metadata)
-            team2_stats.update(metadata)
+            # Add team1's perspective
+            team1_stats.update(metadata_team1)
+            team1_stats['team'] = game['tm_name']  # Eagles (for example)
+            team1_stats['opponent'] = game['opp_name']  # Packers (for example)
             self.team_stats_list.append(team1_stats)
+
+            # Add team2's perspective with the swapped location and score
+            team2_stats.update(metadata_team2)
+            team2_stats['team'] = game['opp_name']  # Packers
+            team2_stats['opponent'] = game['tm_name']  # Eagles
             self.team_stats_list.append(team2_stats)
         else:
             print(f"Stats not available yet for {game_url}")
@@ -87,7 +106,7 @@ class NFLGameStats:
         print(team2_stats)
         metadata = self.extract_game_metadata(gamelog_metadata)
         return team1_stats, team2_stats, metadata
-   
+
     def extract_team_stats(self, team_data, team_name):
         """Extracts specific team statistics."""
         return {
