@@ -192,7 +192,7 @@ class NFLGameStats:
             if isinstance(value, pd.Series):
                 value = value.iloc[0]  # Ensure we are working with scalar values
             if value is None or pd.isna(value):
-                cleaned_metadata[key] = 0  # Replace None or NaN with 0
+                cleaned_metadata[key] = "N/A"  # Replace None or NaN with 0
             elif isinstance(value, str):
                 cleaned_metadata[key] = value.strip()  # Remove leading spaces for strings
             else:
@@ -216,21 +216,12 @@ class NFLGameStats:
             elif pd.api.types.is_numeric_dtype(df[col]):
                 df[col] = df[col].astype(float)  # Convert all numeric columns to float
 
-        # Display the DataFrame
-        print(df)
-
         # Save the DataFrame to CSV
         csv_filename = f'nfl_game_stats_{self.date}.csv'
         df.to_csv(csv_filename, index=False)
         print(f"Data saved to {csv_filename}")
 
-        # Save the DataFrame to Excel
-        excel_filename = f'nfl_game_stats_{self.date}.xlsx'
-        with pd.ExcelWriter(excel_filename, engine='xlsxwriter') as writer:
-            df.to_excel(writer, sheet_name='Game Stats', index=False)
-        print(f"Data saved to {excel_filename}")
-
 # Example usage:
-input_date = "2024-09-06"
+input_date = "2024-09-08"
 nfl_stats = NFLGameStats(input_date)
 nfl_stats.fetch_games()
