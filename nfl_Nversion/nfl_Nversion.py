@@ -100,6 +100,8 @@ class NFLGameStats:
             print(f"Statistics not available for {game_url}: {e}")
             return None, None, {}
 
+        # Check the available columns in the gamelog_statistics DataFrame
+        print(f"Available columns: {gamelog_statistics.columns}")
 
         # Ensure that team1_stats corresponds to team1_name (Eagles) and team2_stats to team2_name (Packers)
         if 'market' in gamelog_statistics.columns:
@@ -151,8 +153,10 @@ class NFLGameStats:
         }
 
     def extract_game_metadata(self, metadata):
-        """Extracts specific metadata from the game."""
-        return {
+        """Extracts specific metadata from the game, removes leading spaces, and formats data."""
+    
+        # Create the metadata dictionary
+        cleaned_metadata = {
             'tm_spread': metadata.get('tm_spread', 0),
             'opp_spread': metadata.get('opp_spread', 0),
             'total': metadata.get('total', 0),
@@ -169,19 +173,43 @@ class NFLGameStats:
             'wind_speed': metadata.get('wind_speed', 'N/A'),
         }
 
+        # Clean the fields and handle potential None or NaN values
+        for key, value in cleaned_metadata.items():
+            if isinstance(value, pd.Series):
+                value = value.iloc[0]  # Ensure we are working with scalar values
+            if value is None or pd.isna(value):
+                cleaned_metadata[key] = 0  # Replace None or NaN with 0
+            elif isinstance(value, str):
+                cleaned_metadata[key] = value.strip()  # Remove leading spaces for strings
+            else:
+                cleaned_metadata[key] = float(value)  # Format numbers as floats
+
+        return cleaned_metadata
+
+
     def display_stats(self):
         """Displays the collected statistics in DataFrame format and exports to Excel."""
         if not self.team_stats_list:
             print("No data available to display.")
             return
-       
+    
         df = pd.DataFrame(self.team_stats_list)
-       
+
+        # Ensure proper formatting for numbers and strings
+        for col in df.columns:
+            if df[col].dtype == object:
+                df[col] = df[col].apply(lambda x: x.strip() if isinstance(x, str) else x)
+            elif pd.api.types.is_numeric_dtype(df[col]):
+                df[col] = df[col].astype(float)  # Convert all numeric columns to float
+
+        # Display the DataFrame
+        print(df)
+
         # Save the DataFrame to CSV
         csv_filename = f'nfl_game_stats_{self.date}.csv'
         df.to_csv(csv_filename, index=False)
         print(f"Data saved to {csv_filename}")
-       
+
         # Save the DataFrame to Excel
         excel_filename = f'nfl_game_stats_{self.date}.xlsx'
         with pd.ExcelWriter(excel_filename, engine='xlsxwriter') as writer:
@@ -189,6 +217,6 @@ class NFLGameStats:
         print(f"Data saved to {excel_filename}")
 
 # Example usage:
-input_date = "2024-09-08"
+input_date = "2024-09-06"
 nfl_stats = NFLGameStats(input_date)
 nfl_stats.fetch_games()
