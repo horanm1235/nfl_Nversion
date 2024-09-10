@@ -114,9 +114,6 @@ class NFLGameStats:
             print(f"Statistics not available for {game_url}: {e}")
             return None, None, {}
 
-        # Check the available columns in the gamelog_statistics DataFrame
-        print(f"Available columns: {gamelog_statistics.columns}")
-
         # Ensure that team1_stats corresponds to team1_name (Eagles) and team2_stats to team2_name (Packers)
         if 'market' in gamelog_statistics.columns:
             # Use 'market' as the column for identifying teams
