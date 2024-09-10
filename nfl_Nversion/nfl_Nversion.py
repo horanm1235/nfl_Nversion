@@ -1,4 +1,3 @@
-
 import nflscraPy
 from datetime import datetime
 import pandas as pd
