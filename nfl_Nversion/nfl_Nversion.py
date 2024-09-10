@@ -1,36 +1,55 @@
 import nflscraPy
-from datetime import datetime
+from datetime import datetime, timedelta
 import pandas as pd
 import os
 
 class NFLGameStats:
-    def __init__(self, date=None):
-        """Initialize the object with a date or default to today's date."""
-        self.date = date if date else datetime.today().strftime('%Y-%m-%d')
+    def __init__(self, week=None):
+        """Initialize the object with a week number or default to the current week."""
+        self.week = week if week else self.get_current_week()
         self.current_season = datetime.today().year
         self.team_stats_list = []
+        self.season_start = datetime(2024, 9, 5)  # Season starts on Thursday, 2024-09-05
+
+    def get_current_week(self):
+        """Determines the current NFL week based on today's date."""
+        today = datetime.today()
+        days_since_start = (today - self.season_start).days
+        current_week = days_since_start // 7 + 1
+        return current_week
+
+    def get_week_start_date(self):
+        """Calculates the Thursday date for the given week."""
+        return self.season_start + timedelta(weeks=self.week - 1)
 
     def fetch_games(self):
-        """Fetches the games for the given date using the '_gamelogs' method."""
+        """Fetches the games for the given week, from Thursday to Monday."""
+        start_date = self.get_week_start_date()
+        end_date = start_date + timedelta(days=4)  # Monday is 4 days after Thursday
+
+        print(f"Fetching games from {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')} for week {self.week}.")
+
         try:
-            # Using _gamelogs to fetch the game logs
+            # Using _gamelogs to fetch the game logs for the season
             all_games = nflscraPy._gamelogs(self.current_season)
         except Exception as e:
             print(f"Error fetching game logs: {e}")
             return
 
-        games_on_date = all_games[all_games['event_date'] == self.date]
-       
-        if games_on_date.empty:
-            print(f"No games scheduled for {self.date}.")
+        # Filter games for the date range (Thursday to Monday)
+        games_in_week = all_games[(all_games['event_date'] >= start_date.strftime('%Y-%m-%d')) & 
+                                  (all_games['event_date'] <= end_date.strftime('%Y-%m-%d'))]
+
+        if games_in_week.empty:
+            print(f"No games scheduled from {start_date} to {end_date}.")
             return
-       
-        print(f"Fetching data for {len(games_on_date)} games happening on {self.date}")
-       
+
+        print(f"Fetching data for {len(games_in_week)} games happening in week {self.week}")
+        
         # Loop over games and fetch detailed stats
-        for idx, game in games_on_date.iterrows():
+        for idx, game in games_in_week.iterrows():
             self.process_game(game)
-       
+
         # Convert the stats list to a DataFrame and display
         self.display_stats()
 
@@ -41,64 +60,14 @@ class NFLGameStats:
         print(f"Processing game between {game['tm_name']} and {game['opp_name']} on {game['event_date']}")
         print(f"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
-        # Extract additional fields from the game DataFrame row
-        tm_location = game['tm_location']  # Tm's location (H, A, N)
-        opp_location = game['opp_location']  # Opp's location (H, A, N)
-        tm_score = game['tm_score']  # Tm's score
-        opp_score = game['opp_score']  # Opp's score
-        week = game['week']  # Week of the game
-
-        # Fetch the statistics for both teams
+        # Fetch statistics and metadata
         team1_stats, team2_stats, metadata = self.extract_game_statistics(game_url, game['tm_name'], game['opp_name'])
 
-        # Add metadata for team 1's perspective
-        metadata_team1 = metadata.copy()  # Create a copy of the metadata for each team's entry
-        metadata_team2 = metadata.copy()
-
-        # Update spread values based on home/away
-        if tm_location == 'H':  # Tm is home
-            metadata_team1['tm_spread'] = metadata['tm_spread']  # Home team spread
-            metadata_team1['opp_spread'] = metadata['opp_spread']  # Opponent spread
-            metadata_team2['tm_spread'] = metadata['opp_spread']  # Opponent becomes home in team2's perspective
-            metadata_team2['opp_spread'] = metadata['tm_spread']  # Home becomes opponent
-        else:  # Tm is away
-            metadata_team1['tm_spread'] = metadata['opp_spread']  # Away team spread
-            metadata_team1['opp_spread'] = metadata['tm_spread']  # Home team spread
-            metadata_team2['tm_spread'] = metadata['tm_spread']  # Home stays home in team2's perspective
-            metadata_team2['opp_spread'] = metadata['opp_spread']  # Opponent stays opponent
-
-        metadata_team1.update({
-            'tm_location': tm_location,
-            'opp_location': opp_location,
-            'tm_score': tm_score,
-            'opp_score': opp_score,
-            'week': week
-        })
-
-        # Add metadata for team 2's perspective, where the locations are swapped
-        metadata_team2.update({
-            'tm_location': opp_location,  # Swapped with the opponent's location
-            'opp_location': tm_location,  # Swapped with the team's location
-            'tm_score': opp_score,        # Swap scores as well
-            'opp_score': tm_score,
-            'week': week
-        })
-
         if team1_stats and team2_stats:
-            # Add team1's perspective
-            team1_stats.update(metadata_team1)
-            team1_stats['team'] = game['tm_name']  # Eagles (for example)
-            team1_stats['opponent'] = game['opp_name']  # Packers (for example)
-            self.team_stats_list.append(team1_stats)
-
-            # Add team2's perspective with the swapped location and score
-            team2_stats.update(metadata_team2)
-            team2_stats['team'] = game['opp_name']  # Packers
-            team2_stats['opponent'] = game['tm_name']  # Eagles
-            self.team_stats_list.append(team2_stats)
+            # Process and add stats
+            self.process_stats(game, team1_stats, team2_stats, metadata)
         else:
-            print(f"Stats not available yet for {game_url}")
-
+            print(f"Game between {game['tm_name']} and {game['opp_name']} has no stats available yet.")
 
     def extract_game_statistics(self, game_url, team1_name, team2_name):
         """Extracts game statistics for both teams and metadata."""
@@ -114,9 +83,8 @@ class NFLGameStats:
             print(f"Statistics not available for {game_url}: {e}")
             return None, None, {}
 
-        # Ensure that team1_stats corresponds to team1_name (Eagles) and team2_stats to team2_name (Packers)
+        # Ensure that team1_stats corresponds to team1_name and team2_stats to team2_name
         if 'market' in gamelog_statistics.columns:
-            # Use 'market' as the column for identifying teams
             if gamelog_statistics.iloc[0]['market'] == team1_name:
                 team1_stats = self.extract_team_stats(gamelog_statistics.iloc[0], team1_name)
                 team2_stats = self.extract_team_stats(gamelog_statistics.iloc[1], team2_name)
@@ -124,7 +92,6 @@ class NFLGameStats:
                 team1_stats = self.extract_team_stats(gamelog_statistics.iloc[1], team1_name)
                 team2_stats = self.extract_team_stats(gamelog_statistics.iloc[0], team2_name)
         else:
-            # Handle the case where the expected column is missing
             print("The 'market' column is missing. Please check the column names.")
             return None, None, {}
 
@@ -164,57 +131,106 @@ class NFLGameStats:
         }
 
     def extract_game_metadata(self, metadata):
-        """Extracts specific metadata from the game, removes leading spaces, and formats data."""
-    
-        # Create the metadata dictionary
+        """Extracts specific metadata from the game."""
         cleaned_metadata = {
-            'tm_spread': metadata.get('tm_spread', 0),
-            'opp_spread': metadata.get('opp_spread', 0),
-            'total': metadata.get('total', 0),
-            'attendance': metadata.get('attendance', 0),
-            'duration': metadata.get('duration', 0),
-            'roof_type': metadata.get('roof_type', 'N/A'),
-            'surface_type': metadata.get('surface_type', 'N/A'),
-            'temperature': metadata.get('temperature', 'N/A'),
-            'humidity_pct': metadata.get('humidity_pct', 'N/A'),
-            'wind_speed': metadata.get('wind_speed', 'N/A'),
+            'tm_spread': self.clean_value(metadata.get('tm_spread', 0)),
+            'opp_spread': self.clean_value(metadata.get('opp_spread', 0)),
+            'total': self.clean_value(metadata.get('total', 0)),
+            'attendance': self.clean_value(metadata.get('attendance', 0)),
+            'duration': self.clean_value(metadata.get('duration', 0)),
+            'roof_type': self.clean_value(metadata.get('roof_type', '0'), expected_type='string'),  # Ensure strings are handled
+            'surface_type': self.clean_value(metadata.get('surface_type', '0'), expected_type='string'),  # Ensure strings are handled
+            'temperature': self.clean_value(metadata.get('temperature', 0)),
+            'humidity_pct': self.clean_value(metadata.get('humidity_pct', 0)),
+            'wind_speed': self.clean_value(metadata.get('wind_speed', 0)),
         }
-
-        # Clean the fields and handle potential None or NaN values
-        for key, value in cleaned_metadata.items():
-            if isinstance(value, pd.Series):
-                value = value.iloc[0]  # Ensure we are working with scalar values
-            if value is None or pd.isna(value):
-                cleaned_metadata[key] = 0  # Replace None or NaN with 0
-            elif isinstance(value, str):
-                cleaned_metadata[key] = value.strip()  # Remove leading spaces for strings
-            else:
-                cleaned_metadata[key] = float(value)  # Format numbers as floats
-
         return cleaned_metadata
 
+
+
+    def clean_value(self, value, expected_type=None):
+        """Cleans individual values by removing leading zeros and replacing None/NaN/N/A with 0."""
+        if isinstance(value, pd.Series):
+            # If value is a Series, extract the first element
+            value = value.iloc[0] if not value.empty else None
+        if pd.isna(value) or value in [None, 'N/A', 'None', '']:  # Handle NaN, None, empty, etc.
+            return '0' if expected_type == 'string' else 0
+        if isinstance(value, str):
+            return value.strip() if value.strip() else '0'  # Remove leading/trailing spaces
+        return float(value)  # Convert to float if it's a number
+
+    def process_stats(self, game, team1_stats, team2_stats, metadata):
+        """Helper function to process and add the stats for both teams."""
+        tm_location = game['tm_location']
+        opp_location = game['opp_location']
+        tm_score = game['tm_score']
+        opp_score = game['opp_score']
+
+        # Create metadata for both perspectives (team1, team2)
+        metadata_team1 = metadata.copy()
+        metadata_team2 = metadata.copy()
+
+        if tm_location == 'H':  # Tm is home
+            metadata_team1['tm_spread'] = metadata['tm_spread']
+            metadata_team1['opp_spread'] = metadata['opp_spread']
+            metadata_team2['tm_spread'] = metadata['opp_spread']
+            metadata_team2['opp_spread'] = metadata['tm_spread']
+        else:  # Tm is away
+            metadata_team1['tm_spread'] = metadata['opp_spread']
+            metadata_team1['opp_spread'] = metadata['tm_spread']
+            metadata_team2['tm_spread'] = metadata['tm_spread']
+            metadata_team2['opp_spread'] = metadata['opp_spread']
+
+        metadata_team1.update({
+            'tm_location': tm_location,
+            'opp_location': opp_location,
+            'tm_score': tm_score,
+            'opp_score': opp_score
+        })
+
+        metadata_team2.update({
+            'tm_location': opp_location,
+            'opp_location': tm_location,
+            'tm_score': opp_score,
+            'opp_score': tm_score
+        })
+
+        # Clean stats before adding
+        team1_stats = self.clean_stats(team1_stats)
+        team2_stats = self.clean_stats(team2_stats)
+
+        # Add both perspectives
+        team1_stats.update(metadata_team1)
+        team1_stats['team'] = game['tm_name']
+        team1_stats['opponent'] = game['opp_name']
+        self.team_stats_list.append(team1_stats)
+
+        team2_stats.update(metadata_team2)
+        team2_stats['team'] = game['opp_name']
+        team2_stats['opponent'] = game['tm_name']
+        self.team_stats_list.append(team2_stats)
+
+    def clean_stats(self, stats):
+        """Removes leading zeros, handles NaN values, and formats the values correctly."""
+        cleaned_stats = {}
+        for key, value in stats.items():
+            cleaned_stats[key] = self.clean_value(value)  # Use clean_value method to handle cleaning
+        return cleaned_stats
 
     def display_stats(self):
         """Displays the collected statistics in DataFrame format and exports to Excel."""
         if not self.team_stats_list:
-            print("No data available to display.")
+            print("No data available to display yet, but some games may still be in progress.")
             return
-    
+
         df = pd.DataFrame(self.team_stats_list)
 
-        # Ensure proper formatting for numbers and strings
-        for col in df.columns:
-            if df[col].dtype == object:
-                df[col] = df[col].apply(lambda x: x.strip() if isinstance(x, str) else x)
-            elif pd.api.types.is_numeric_dtype(df[col]):
-                df[col] = df[col].astype(float)  # Convert all numeric columns to float
-
         # Save the DataFrame to CSV
-        csv_filename = f'nfl_game_stats_{self.date}.csv'
+        csv_filename = f'nfl_game_stats_week_{self.week}.csv'
         df.to_csv(csv_filename, index=False)
         print(f"Data saved to {csv_filename}")
 
 # Example usage:
-input_date = "2024-09-06"
-nfl_stats = NFLGameStats(input_date)
+week = 1  # Set the week number you want to fetch
+nfl_stats = NFLGameStats(week=week)
 nfl_stats.fetch_games()
