@@ -175,10 +175,6 @@ class NFLGameStats:
             'duration': metadata.get('duration', 0),
             'roof_type': metadata.get('roof_type', 'N/A'),
             'surface_type': metadata.get('surface_type', 'N/A'),
-            'won_toss': metadata.get('won_toss', 'N/A'),
-            'won_toss_decision': metadata.get('won_toss_decision', 'N/A'),
-            'won_toss_overtime': metadata.get('won_toss_overtime', 'N/A'),
-            'won_toss_overtime_decision': metadata.get('won_toss_overtime_decision', 'N/A'),
             'temperature': metadata.get('temperature', 'N/A'),
             'humidity_pct': metadata.get('humidity_pct', 'N/A'),
             'wind_speed': metadata.get('wind_speed', 'N/A'),
@@ -189,7 +185,7 @@ class NFLGameStats:
             if isinstance(value, pd.Series):
                 value = value.iloc[0]  # Ensure we are working with scalar values
             if value is None or pd.isna(value):
-                cleaned_metadata[key] = "N/A"  # Replace None or NaN with 0
+                cleaned_metadata[key] = 0  # Replace None or NaN with 0
             elif isinstance(value, str):
                 cleaned_metadata[key] = value.strip()  # Remove leading spaces for strings
             else:
@@ -219,6 +215,6 @@ class NFLGameStats:
         print(f"Data saved to {csv_filename}")
 
 # Example usage:
-input_date = "2024-09-08"
+input_date = "2024-09-06"
 nfl_stats = NFLGameStats(input_date)
 nfl_stats.fetch_games()
